@@ -83,7 +83,7 @@ export default function Sidebar() {
             <NavLinks />
 
             <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => signOut({ callbackUrl: "/" })}
               className="mt-6 rounded-md border border-[#1E242E] px-3 py-2 text-left text-sm text-[#7C8494] transition-colors hover:border-[#2B323F] hover:text-[#EDEFF2]"
             >
               Sair
