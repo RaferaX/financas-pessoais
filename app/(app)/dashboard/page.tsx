@@ -118,7 +118,7 @@ export default function DashboardPage() {
                 <XAxis dataKey="label" stroke="#5B6472" fontSize={12} />
                 <YAxis stroke="#5B6472" fontSize={12} />
                 <Tooltip
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value) => formatCurrency(Number(value))}
                   contentStyle={{ backgroundColor: "#0A0D12", border: "1px solid #1E242E" }}
                   labelStyle={{ color: "#EDEFF2" }}
                 />
@@ -148,13 +148,13 @@ export default function DashboardPage() {
                     cx="50%"
                     cy="50%"
                     outerRadius={90}
-                    label={({ name, total }) => `${name}: ${formatCurrency(total)}`}
+                    label={(props) => `${props.name}: ${formatCurrency(Number(props.value))}`}
                   >
                     {data.despesasPorCategoria.map((entry, index) => (
                       <Cell key={index} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
