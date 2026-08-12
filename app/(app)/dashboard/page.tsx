@@ -27,6 +27,7 @@ interface EvolucaoMes {
   label: string;
   receitas: number;
   despesas: number;
+  projetado: boolean;
 }
 
 export default function DashboardPage() {
@@ -109,8 +110,11 @@ export default function DashboardPage() {
 
         <div className="mb-8 rounded-xl border border-[#1E242E] bg-[#12161D] p-6">
           <h2 className="mb-4 [font-family:var(--font-display)] text-base font-semibold text-[#EDEFF2]">
-            Evolução mensal — Receitas x Despesas
+            Evolução mensal — Passado e Projeção
           </h2>
+          <p className="mb-4 text-xs text-[#5B6472]">
+            Meses futuros são projetados com base em parcelamentos já cadastrados.
+          </p>
           <div className="h-72 w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={evolucao}>
@@ -123,8 +127,16 @@ export default function DashboardPage() {
                   labelStyle={{ color: "#EDEFF2" }}
                 />
                 <Legend />
-                <Bar dataKey="receitas" name="Receitas" fill="#34D399" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="despesas" name="Despesas" fill="#FB7185" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="receitas" name="Receitas" fill="#34D399" radius={[4, 4, 0, 0]}>
+                  {evolucao.map((entry, index) => (
+                    <Cell key={index} fill="#34D399" fillOpacity={entry.projetado ? 0.35 : 1} />
+                  ))}
+                </Bar>
+                <Bar dataKey="despesas" name="Despesas" fill="#FB7185" radius={[4, 4, 0, 0]}>
+                  {evolucao.map((entry, index) => (
+                    <Cell key={index} fill="#FB7185" fillOpacity={entry.projetado ? 0.35 : 1} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

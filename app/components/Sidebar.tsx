@@ -8,6 +8,7 @@ import { signOut } from "next-auth/react";
 const links = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/transacoes", label: "Transações" },
+  { href: "/parcelamentos", label: "Parcelamentos" },
   { href: "/categorias", label: "Categorias" },
   { href: "/patrimonio", label: "Patrimônio" },
 ];
@@ -17,27 +18,31 @@ export default function Sidebar() {
   const [open, setOpen] = useState(false);
 
   const NavLinks = () => (
-    <nav className="flex-1 space-y-0.5">
-      {links.map((link) => {
-        const isActive = pathname === link.href;
-        return (
-          <Link
-            key={link.href}
-            href={link.href}
-            onClick={() => setOpen(false)}
-            className={`relative block rounded-md px-3 py-2 text-sm transition-colors ${
-              isActive ? "text-[#EDEFF2]" : "text-[#7C8494] hover:text-[#EDEFF2]"
+  <nav className="flex-1 space-y-1">
+    {links.map((link) => {
+      const isActive = pathname === link.href;
+      return (
+        <Link
+          key={link.href}
+          href={link.href}
+          onClick={() => setOpen(false)}
+          className={`group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+            isActive
+              ? "bg-[#1A1F28] text-[#EDEFF2] shadow-[inset_2px_0_0_0_#E8B04B]"
+              : "text-[#7C8494] hover:bg-[#12161D] hover:text-[#EDEFF2]"
+          }`}
+        >
+          <span
+            className={`mr-2.5 h-1.5 w-1.5 rounded-full transition-colors ${
+              isActive ? "bg-[#E8B04B]" : "bg-[#2B323F] group-hover:bg-[#5B6472]"
             }`}
-          >
-            {isActive && (
-              <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-[#E8B04B]" />
-            )}
-            <span className="pl-3">{link.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
-  );
+          />
+          {link.label}
+        </Link>
+      );
+    })}
+  </nav>
+);
 
   return (
     <>

@@ -19,24 +19,33 @@ export async function GET() {
 
   const now = new Date();
   const mesesAtras = 6;
+  const mesesAFrente = 6;
 
   const startRange = new Date(now.getFullYear(), now.getMonth() - (mesesAtras - 1), 1);
+  const endRange = new Date(now.getFullYear(), now.getMonth() + mesesAFrente + 1, 0, 23, 59, 59);
 
   const transactions = await prisma.transaction.findMany({
     where: {
       userId: user.id,
-      date: { gte: startRange },
+      date: { gte: startRange, lte: endRange },
     },
     include: { category: true },
   });
 
-  const meses: { key: string; label: string; receitas: number; despesas: number }[] = [];
+  const meses: {
+    key: string;
+    label: string;
+    receitas: number;
+    despesas: number;
+    projetado: boolean;
+  }[] = [];
 
-  for (let i = mesesAtras - 1; i >= 0; i--) {
+  for (let i = mesesAtras - 1; i >= -mesesAFrente; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
     const label = d.toLocaleDateString("pt-BR", { month: "short" });
-    meses.push({ key, label, receitas: 0, despesas: 0 });
+    const projetado = i < 0;
+    meses.push({ key, label, receitas: 0, despesas: 0, projetado });
   }
 
   transactions.forEach((t) => {
