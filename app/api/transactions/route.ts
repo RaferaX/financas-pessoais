@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 
-// Listar todas as transações do usuário logado
-export async function GET() {
+// Listar todas as transações do usuário logado (com filtros opcionais)
+export async function GET(request: Request) {
   const session = await getServerSession();
 
   if (!session?.user?.email) {
@@ -18,8 +18,38 @@ export async function GET() {
     return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const month = searchParams.get("month"); // formato "2026-08"
+  const categoryId = searchParams.get("categoryId");
+  const type = searchParams.get("type");
+  const minAmount = searchParams.get("minAmount");
+  const maxAmount = searchParams.get("maxAmount");
+
+  const where: any = { userId: user.id };
+
+  if (month) {
+    const [year, monthNum] = month.split("-").map(Number);
+    const start = new Date(year, monthNum - 1, 1);
+    const end = new Date(year, monthNum, 0, 23, 59, 59);
+    where.date = { gte: start, lte: end };
+  }
+
+  if (categoryId) {
+    where.categoryId = categoryId;
+  }
+
+  if (type) {
+    where.type = type;
+  }
+
+  if (minAmount || maxAmount) {
+    where.amount = {};
+    if (minAmount) where.amount.gte = parseFloat(minAmount);
+    if (maxAmount) where.amount.lte = parseFloat(maxAmount);
+  }
+
   const transactions = await prisma.transaction.findMany({
-    where: { userId: user.id },
+    where,
     include: { category: true },
     orderBy: { date: "desc" },
   });

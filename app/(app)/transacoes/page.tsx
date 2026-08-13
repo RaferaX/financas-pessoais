@@ -29,9 +29,22 @@ export default function TransacoesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [filterMonth, setFilterMonth] = useState("");
+  const [filterCategoryId, setFilterCategoryId] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterMinAmount, setFilterMinAmount] = useState("");
+  const [filterMaxAmount, setFilterMaxAmount] = useState("");
+
   async function loadData() {
+    const params = new URLSearchParams();
+    if (filterMonth) params.set("month", filterMonth);
+    if (filterCategoryId) params.set("categoryId", filterCategoryId);
+    if (filterType) params.set("type", filterType);
+    if (filterMinAmount) params.set("minAmount", filterMinAmount);
+    if (filterMaxAmount) params.set("maxAmount", filterMaxAmount);
+
     const [transRes, catRes] = await Promise.all([
-      fetch("/api/transactions"),
+      fetch(`/api/transactions?${params.toString()}`),
       fetch("/api/categories"),
     ]);
     const transData = await transRes.json();
@@ -47,7 +60,7 @@ export default function TransacoesPage() {
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [filterMonth, filterCategoryId, filterType, filterMinAmount, filterMaxAmount]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -101,6 +114,14 @@ export default function TransacoesPage() {
     setAmount("");
     setDescription("");
     setType("despesa");
+  }
+
+  function clearFilters() {
+    setFilterMonth("");
+    setFilterCategoryId("");
+    setFilterType("");
+    setFilterMinAmount("");
+    setFilterMaxAmount("");
   }
 
   function formatCurrency(value: number) {
@@ -216,11 +237,89 @@ export default function TransacoesPage() {
           </div>
         </form>
 
+        <div className="mb-6 rounded-xl border border-[#1E242E] bg-[#12161D] p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="[font-family:var(--font-display)] text-base font-semibold text-[#EDEFF2]">
+              Filtros
+            </h2>
+            <button
+              onClick={clearFilters}
+              className="text-sm text-[#7C8494] transition hover:text-[#EDEFF2]"
+            >
+              Limpar filtros
+            </button>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm text-[#7C8494]">Mês</label>
+              <input
+                type="month"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="w-full rounded-lg border border-[#1E242E] bg-[#0A0D12] px-4 py-2 text-[#EDEFF2] outline-none focus:border-[#E8B04B]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm text-[#7C8494]">Categoria</label>
+              <select
+                value={filterCategoryId}
+                onChange={(e) => setFilterCategoryId(e.target.value)}
+                className="w-full rounded-lg border border-[#1E242E] bg-[#0A0D12] px-4 py-2 text-[#EDEFF2] outline-none focus:border-[#E8B04B]"
+              >
+                <option value="">Todas</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm text-[#7C8494]">Tipo</label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full rounded-lg border border-[#1E242E] bg-[#0A0D12] px-4 py-2 text-[#EDEFF2] outline-none focus:border-[#E8B04B]"
+              >
+                <option value="">Todos</option>
+                <option value="despesa">Despesa</option>
+                <option value="receita">Receita</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="mb-1 block text-sm text-[#7C8494]">Valor mín.</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={filterMinAmount}
+                  onChange={(e) => setFilterMinAmount(e.target.value)}
+                  className="w-full rounded-lg border border-[#1E242E] bg-[#0A0D12] px-3 py-2 tabular-nums text-[#EDEFF2] outline-none focus:border-[#E8B04B]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-[#7C8494]">Valor máx.</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={filterMaxAmount}
+                  onChange={(e) => setFilterMaxAmount(e.target.value)}
+                  className="w-full rounded-lg border border-[#1E242E] bg-[#0A0D12] px-3 py-2 tabular-nums text-[#EDEFF2] outline-none focus:border-[#E8B04B]"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="space-y-2">
           {loading && <p className="text-[#5B6472]">Carregando...</p>}
 
           {!loading && transactions.length === 0 && (
-            <p className="text-[#5B6472]">Nenhuma transação lançada ainda.</p>
+            <p className="text-[#5B6472]">Nenhuma transação encontrada.</p>
           )}
 
           {transactions.map((transaction) => (

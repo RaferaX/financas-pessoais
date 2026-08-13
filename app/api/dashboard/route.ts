@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession();
 
   if (!session?.user?.email) {
@@ -17,9 +17,15 @@ export async function GET() {
     return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const monthParam = searchParams.get("month"); // formato "2026-08"
+
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const year = monthParam ? parseInt(monthParam.split("-")[0]) : now.getFullYear();
+  const monthIndex = monthParam ? parseInt(monthParam.split("-")[1]) - 1 : now.getMonth();
+
+  const startOfMonth = new Date(year, monthIndex, 1);
+  const endOfMonth = new Date(year, monthIndex + 1, 0, 23, 59, 59);
 
   const transactions = await prisma.transaction.findMany({
     where: {
