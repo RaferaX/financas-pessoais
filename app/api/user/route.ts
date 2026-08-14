@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { resend } from "@/lib/resend";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -33,15 +35,14 @@ export async function PATCH(req: Request) {
   const body = await req.json();
   const { name, email, currentPassword, newPassword } = body;
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-  });
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
 
   if (!user) {
     return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
   }
 
-  const dataToUpdate: { name?: string; email?: string; password?: string } = {};
+  const dataToUpdate: { name?: string; password?: string } = {};
+  let emailChangeRequested = false;
 
   if (name !== undefined) {
     if (!name.trim()) {
@@ -55,7 +56,41 @@ export async function PATCH(req: Request) {
     if (existing) {
       return NextResponse.json({ error: "Este email já está em uso" }, { status: 400 });
     }
-    dataToUpdate.email = email;
+
+    const pendingEmailToken = crypto.randomBytes(32).toString("hex");
+    const pendingEmailTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { pendingEmail: email, pendingEmailToken, pendingEmailTokenExpiry },
+    });
+
+    const confirmUrl = `${process.env.NEXTAUTH_URL}/confirmar-email?token=${pendingEmailToken}`;
+
+    const emailResult = await resend.emails.send({
+      from: "onboarding@resend.dev",
+      to: email,
+      subject: "Confirme seu novo email — Finanças+",
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+          <h2>Confirmar novo email</h2>
+          <p>Você solicitou a troca do email da sua conta no Finanças+ para este endereço.</p>
+          <p>Clique no link abaixo para confirmar. Esse link expira em 1 hora.</p>
+          <p><a href="${confirmUrl}" style="background:#E8B04B;color:#0A0D12;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Confirmar novo email</a></p>
+          <p>Se você não solicitou isso, pode ignorar este email — seu email atual continua ativo normalmente.</p>
+        </div>
+      `,
+    });
+
+    if (emailResult.error) {
+      console.error("Erro do Resend:", emailResult.error);
+      return NextResponse.json(
+        { error: "Não foi possível enviar o email de confirmação. Tente novamente." },
+        { status: 500 }
+      );
+    }
+
+    emailChangeRequested = true;
   }
 
   if (newPassword) {
@@ -94,7 +129,7 @@ export async function PATCH(req: Request) {
     select: { id: true, name: true, email: true },
   });
 
-  return NextResponse.json(updatedUser);
+  return NextResponse.json({ ...updatedUser, emailChangeRequested });
 }
 
 export async function DELETE(req: Request) {
@@ -107,9 +142,7 @@ export async function DELETE(req: Request) {
   const body = await req.json();
   const { password } = body;
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-  });
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
 
   if (!user) {
     return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
@@ -134,9 +167,7 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Senha incorreta" }, { status: 400 });
   }
 
-  await prisma.user.delete({
-    where: { id: session.user.id },
-  });
+  await prisma.user.delete({ where: { id: session.user.id } });
 
   return NextResponse.json({ success: true });
 }

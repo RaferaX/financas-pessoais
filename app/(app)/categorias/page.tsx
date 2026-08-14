@@ -11,6 +11,14 @@ interface Category {
   isInvestment: boolean;
 }
 
+interface CategoryBudget {
+  categoryId: string;
+  name: string;
+  color: string;
+  limitValue: number | null;
+  spent: number;
+}
+
 export default function CategoriasPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [name, setName] = useState("");
@@ -21,6 +29,15 @@ export default function CategoriasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [budgets, setBudgets] = useState<CategoryBudget[]>([]);
+  const [loadingBudgets, setLoadingBudgets] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [budgetInputs, setBudgetInputs] = useState<Record<string, string>>({});
+  const [savingBudgetId, setSavingBudgetId] = useState<string | null>(null);
+
   async function loadCategories() {
     const res = await fetch("/api/categories");
     const data = await res.json();
@@ -28,10 +45,23 @@ export default function CategoriasPage() {
     setLoading(false);
   }
 
+  async function loadBudgets() {
+    setLoadingBudgets(true);
+    const res = await fetch(`/api/budgets?month=${selectedMonth}`);
+    const data = await res.json();
+    setBudgets(data);
+    setLoadingBudgets(false);
+  }
+
   useEffect(() => {
     loadCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    loadBudgets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMonth]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,6 +90,7 @@ export default function CategoriasPage() {
     setIsInvestment(false);
     setEditingId(null);
     loadCategories();
+    loadBudgets();
   }
 
   function handleEdit(category: Category) {
@@ -74,6 +105,7 @@ export default function CategoriasPage() {
     if (!confirm("Tem certeza que deseja excluir esta categoria?")) return;
     await fetch(`/api/categories/${id}`, { method: "DELETE" });
     loadCategories();
+    loadBudgets();
   }
 
   function cancelEdit() {
@@ -82,6 +114,33 @@ export default function CategoriasPage() {
     setType("despesa");
     setColor("#6366f1");
     setIsInvestment(false);
+  }
+
+  async function handleSaveBudget(categoryId: string) {
+    const value = budgetInputs[categoryId];
+    if (!value) return;
+
+    setSavingBudgetId(categoryId);
+
+    const [year, month] = selectedMonth.split("-").map(Number);
+
+    await fetch("/api/budgets", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        categoryId,
+        month,
+        year,
+        limitValue: parseFloat(value),
+      }),
+    });
+
+    setSavingBudgetId(null);
+    loadBudgets();
+  }
+
+  function formatCurrency(value: number) {
+    return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
 
   return (
@@ -217,6 +276,90 @@ export default function CategoriasPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-8 rounded-xl border border-[#1E242E] bg-[#12161D] p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="[font-family:var(--font-display)] text-base font-semibold text-[#EDEFF2]">
+              Orçamento por categoria
+            </h2>
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="rounded-lg border border-[#1E242E] bg-[#0A0D12] px-3 py-1.5 text-sm text-[#EDEFF2] outline-none focus:border-[#E8B04B]"
+            />
+          </div>
+
+          {loadingBudgets && <p className="text-[#5B6472]">Carregando...</p>}
+
+          {!loadingBudgets && budgets.length === 0 && (
+            <p className="text-[#5B6472]">Nenhuma categoria de despesa cadastrada ainda.</p>
+          )}
+
+          <div className="space-y-4">
+            {budgets.map((b) => {
+              const hasLimit = b.limitValue !== null && b.limitValue > 0;
+              const percentage = hasLimit ? Math.min((b.spent / b.limitValue!) * 100, 100) : 0;
+              const isOver = hasLimit && b.spent > b.limitValue!;
+
+              return (
+                <div key={b.categoryId}>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: b.color }} />
+                      <span className="text-sm text-[#EDEFF2]">{b.name}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm tabular-nums ${isOver ? "text-[#FB7185]" : "text-[#7C8494]"}`}>
+                        {formatCurrency(b.spent)}
+                        {hasLimit && ` / ${formatCurrency(b.limitValue!)}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {hasLimit && (
+                    <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-[#1E242E]">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${percentage}%`,
+                          backgroundColor: isOver ? "#FB7185" : "#34D399",
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {isOver && (
+                    <p className="mb-2 text-xs text-[#FB7185]">
+                      Limite ultrapassado em {formatCurrency(b.spent - b.limitValue!)}
+                    </p>
+                  )}
+
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder={hasLimit ? String(b.limitValue) : "Definir limite"}
+                      value={budgetInputs[b.categoryId] ?? ""}
+                      onChange={(e) =>
+                        setBudgetInputs((prev) => ({ ...prev, [b.categoryId]: e.target.value }))
+                      }
+                      className="w-40 rounded-lg border border-[#1E242E] bg-[#0A0D12] px-3 py-1.5 text-sm text-[#EDEFF2] outline-none focus:border-[#E8B04B]"
+                    />
+                    <button
+                      onClick={() => handleSaveBudget(b.categoryId)}
+                      disabled={savingBudgetId === b.categoryId || !budgetInputs[b.categoryId]}
+                      className="rounded-lg bg-[#E8B04B] px-3 py-1.5 text-sm font-medium text-[#0A0D12] transition hover:bg-[#F2BE63] disabled:opacity-50"
+                    >
+                      {savingBudgetId === b.categoryId ? "Salvando..." : "Salvar"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

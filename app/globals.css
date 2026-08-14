@@ -24,3 +24,32 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+:root {
+  --bg: #0A0D12;
+  --panel: #12161D;
+  --border: #1E242E;
+  --border-hover: #2B323F;
+  --text-hi: #EDEFF2;
+  --text-lo: #7C8494;
+  --text-faint: #5B6472;
+  --gold: #E8B04B;
+  --gold-hover: #F2BE63;
+  --mint: #34D399;
+  --rose: #FB7185;
+}
+
+.light {
+  --bg: #F7F8FA;
+  --panel: #FFFFFF;
+  --border: #E4E7EC;
+  --border-hover: #CBD2DC;
+  --text-hi: #12161D;
+  --text-lo: #4B5563;
+  --text-faint: #6B7280;
+  --gold: #C8871F;
+  --gold-hover: #B87A15;
+  --mint: #059669;
+  --rose: #E11D48;
+}

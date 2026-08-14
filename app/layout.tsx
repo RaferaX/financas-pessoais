@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
+import ThemeProvider from "./components/Themeprovider";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -21,11 +22,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body
-        className={`${spaceGrotesk.variable} ${inter.variable} antialiased bg-[#0A0D12] text-[#EDEFF2] [font-family:var(--font-body)]`}
+        className={`${spaceGrotesk.variable} ${inter.variable} antialiased bg-[var(--bg)] text-[var(--text-hi)] [font-family:var(--font-body)]`}
       >
-        <Providers>{children}</Providers>
+        <ThemeProvider>
+          <Providers>{children}</Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

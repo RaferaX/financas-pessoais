@@ -19,6 +19,17 @@ model User {
   password      String?
   createdAt     DateTime  @default(now())
 
+  emailVerified        DateTime?
+  verificationToken    String?   @unique
+  verificationTokenExpiry DateTime?
+
+  resetToken            String?   @unique
+  resetTokenExpiry      DateTime?
+
+  pendingEmail           String?
+  pendingEmailToken      String?   @unique
+  pendingEmailTokenExpiry DateTime?
+
   categories    Category[]
   transactions  Transaction[]
   budgets       Budget[]
