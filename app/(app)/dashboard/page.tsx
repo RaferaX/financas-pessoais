@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import {
   PieChart,
@@ -31,6 +32,9 @@ interface EvolucaoMes {
 }
 
 export default function DashboardPage() {
+  const { data: session } = useSession();
+  const firstName = session?.user?.name?.split(" ")[0];
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [evolucao, setEvolucao] = useState<EvolucaoMes[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +100,7 @@ export default function DashboardPage() {
               {formatSelectedMonth()}
             </p>
             <h1 className="[font-family:var(--font-display)] text-2xl font-semibold text-[#EDEFF2]">
-              Dashboard
+              {firstName ? `Bem-vindo, ${firstName}!` : "Dashboard"}
             </h1>
           </div>
 

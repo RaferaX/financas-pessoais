@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
+import Providers from "./providers";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -24,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${spaceGrotesk.variable} ${inter.variable} antialiased bg-[#0A0D12] text-[#EDEFF2] [font-family:var(--font-body)]`}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

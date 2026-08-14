@@ -12,6 +12,7 @@ const links = [
   { href: "/metas", label: "Metas" },
   { href: "/categorias", label: "Categorias" },
   { href: "/patrimonio", label: "Patrimônio" },
+  { href: "/configuracoes", label: "Configurações" },
 ];
 
 export default function Sidebar() {
