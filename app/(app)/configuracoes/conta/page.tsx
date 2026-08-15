@@ -53,8 +53,17 @@ export default function ContaPage() {
       return;
     }
 
-    setProfileMessage({ type: "success", text: "Perfil atualizado com sucesso!" });
-    await update({ user: { name, email } });
+    if (data.emailChangeRequested) {
+      setProfileMessage({
+        type: "success",
+        text: `Nome atualizado. Enviamos um link de confirmação para ${email}. Seu email atual continua ativo até você confirmar.`,
+      });
+      setEmail(data.email);
+      await update({ user: { name } });
+    } else {
+      setProfileMessage({ type: "success", text: "Perfil atualizado com sucesso!" });
+      await update({ user: { name, email: data.email } });
+    }
   }
 
   async function handlePasswordSubmit(e: React.FormEvent) {

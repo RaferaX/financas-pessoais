@@ -11,10 +11,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
+  const [resending, setResending] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setNeedsVerification(false);
+    setResendMessage("");
     setLoading(true);
 
     const result = await signIn("credentials", {
@@ -24,12 +29,31 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("E-mail ou senha incorretos.");
+      if (result.error === "EMAIL_NOT_VERIFIED") {
+        setNeedsVerification(true);
+        setError("Você precisa confirmar seu email antes de entrar.");
+      } else {
+        setError("E-mail ou senha incorretos.");
+      }
       setLoading(false);
       return;
     }
 
     router.push("/dashboard");
+  }
+
+  async function handleResendVerification() {
+    setResending(true);
+    setResendMessage("");
+
+    await fetch("/api/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    setResending(false);
+    setResendMessage("Se o email precisar de verificação, um novo link foi enviado.");
   }
 
   return (
@@ -47,6 +71,22 @@ export default function LoginPage() {
         {error && (
           <div className="mb-4 rounded-lg border border-[#FB7185]/30 bg-[#FB7185]/10 px-4 py-3 text-sm text-[#FB7185]">
             {error}
+            {needsVerification && (
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resending}
+                className="mt-2 block text-sm font-medium text-[#E8B04B] hover:underline disabled:opacity-50"
+              >
+                {resending ? "Enviando..." : "Reenviar email de verificação"}
+              </button>
+            )}
+          </div>
+        )}
+
+        {resendMessage && (
+          <div className="mb-4 rounded-lg border border-[#34D399]/30 bg-[#34D399]/10 px-4 py-3 text-sm text-[#34D399]">
+            {resendMessage}
           </div>
         )}
 
