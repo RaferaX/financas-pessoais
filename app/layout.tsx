@@ -18,6 +18,16 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Finanças+",
   description: "Controle financeiro pessoal",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Finanças+",
+  },
+};
+
+export const viewport = {
+  themeColor: "#0A0D12",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
